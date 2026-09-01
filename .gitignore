@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.DS_Store
+*.local
+src/bindings/*/node_modules
+src/bindings/*/dist
