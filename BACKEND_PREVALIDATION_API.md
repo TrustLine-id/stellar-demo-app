@@ -126,7 +126,7 @@ On **`approval_required: false`**, proof state is `Approved`, stored temporarily
 
 ### `chainId`
 
-Logical chain identifier configured for your dapp on the Trustline backend (string). Demo app: `VITE_BACKEND_CHAIN_ID` (default **`"123"`**).
+Logical chain identifier configured for your dapp on the Trustline backend (string). Demo app: `VITE_BACKEND_CHAIN_ID` (default **`"2"`**).
 
 ### `contractAddress`
 
@@ -274,7 +274,7 @@ Replace placeholders with your testnet values (see `.env.demo`).
 
 ```bash
 export API=https://api.trustline.id/api/v0
-export CHAIN_ID=123
+export CHAIN_ID=2
 export SENDER=GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 export FIREWALL_ID=CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 export FORWARDER_ID=CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

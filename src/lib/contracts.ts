@@ -33,7 +33,7 @@ export function loadConfig(): AppConfig {
     backendApiUrl:
       import.meta.env.VITE_BACKEND_API_URL ||
       "https://api.trustline.id/api/v0",
-    backendChainId: import.meta.env.VITE_BACKEND_CHAIN_ID || "123",
+    backendChainId: import.meta.env.VITE_BACKEND_CHAIN_ID || "2",
   };
 }
 

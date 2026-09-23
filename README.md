@@ -77,7 +77,7 @@ That requires `scripts/deploy-testnet.sh`, which builds WASM from the sibling Ru
 > **Before you start.** The deploy script gives you your own contracts, but the hosted
 > Trustline backend at `api.trustline.id` only pre-validates contracts that have been
 > registered with us for a chain id. It will refuse a freshly deployed address with
-> `Contract address C... is not registered on chain 123`, so both tabs will fail with
+> `Contract address C... is not registered on chain 2`, so both tabs will fail with
 > `NotApproved` until we register them. Use this path to verify the contracts build and
 > deploy from source. To exercise the full flow end to end, either use `.env.demo` or
 > contact us to have your contracts registered.
