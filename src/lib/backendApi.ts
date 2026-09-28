@@ -1,11 +1,15 @@
-export type SorobanArg = {
-  type: string;
-  value: unknown;
-};
+/** Positional JSON values; types come from `functionPrototype`. */
+export type StructuredArg =
+  | string
+  | number
+  | boolean
+  | null
+  | StructuredArg[]
+  | { [key: string]: StructuredArg };
 
 export type StructuredIntentData = {
   functionPrototype: string;
-  args: SorobanArg[];
+  args?: StructuredArg[];
 };
 
 export type OpenSessionParams = {
@@ -24,12 +28,16 @@ type OpenSessionResult = {
   error?: string;
 };
 
+/** Nested proof metadata returned by Stellar/EVM `validate`. */
+export type ValidateAttestation = {
+  timestamp: string;
+  policyHash: string;
+};
+
 export type ValidateResult = {
   status: "approved" | "approval_required" | "rejected";
   certId?: string;
-  policyHash?: string;
-  timestamp?: number;
-  publication?: { status: string; txHash?: string };
+  attestation?: ValidateAttestation;
   type?: string;
   reason?: string;
 };
@@ -99,11 +107,6 @@ export async function validateSession(
   }
   if (result.status !== "approved") {
     throw new Error(`Unexpected validate status: ${String(result.status)}`);
-  }
-  if (result.publication?.status && result.publication.status !== "success") {
-    throw new Error(
-      `On-chain publication failed: ${result.publication.status}`,
-    );
   }
 
   return result;

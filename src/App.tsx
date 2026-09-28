@@ -260,10 +260,7 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
           nativeAmount: "0",
           data: {
             functionPrototype: "forward(symbol,vec)",
-            args: [
-              { type: "symbol", value: "bump" },
-              { type: "vec", value: [] },
-            ],
+            args: ["bump", []],
           },
         });
       } catch (e) {
@@ -275,7 +272,7 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
       }
       pushLog(
         "ok",
-        `[Firewall] Backend pre-validation OK — certId=${validation.certId ?? "?"} tx=${validation.publication?.txHash ?? "?"}`,
+        `[Firewall] Backend pre-validation OK — certId=${validation.certId ?? "?"}`,
       );
 
       pushLog("info", "[Firewall] forward(bump)");
@@ -428,11 +425,7 @@ function DirectTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
           nativeAmount: amount.toString(),
           data: {
             functionPrototype: "pay_native(address,address,i128)",
-            args: [
-              { type: "address", value: config.nativeTokenId },
-              { type: "address", value: dest },
-              { type: "i128", value: amount.toString() },
-            ],
+            args: [config.nativeTokenId, dest, amount.toString()],
           },
         });
       } catch (e) {
@@ -444,7 +437,7 @@ function DirectTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
       }
       pushLog(
         "ok",
-        `[SDK] Backend pre-validation OK — certId=${validation.certId ?? "?"} tx=${validation.publication?.txHash ?? "?"}`,
+        `[SDK] Backend pre-validation OK — certId=${validation.certId ?? "?"}`,
       );
 
       pushLog("info", "[SDK] pay_native");

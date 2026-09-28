@@ -43,7 +43,7 @@ Frontend / integrator                Trustline backend              Soroban
         │                                    │                          │
         │  validate (sessionId)              │  policy + add_tx(VE)     │
         │───────────────────────────────────►│─────────────────────────►│
-        │◄───────────────────────────────────│  certId, publication     │
+        │◄───────────────────────────────────│  certId + attestation    │
         │                                    │                          │
         │  user signs protected invoke       │                          │
         │──────────────────────────────────────────────────────────────►│
@@ -52,7 +52,7 @@ Frontend / integrator                Trustline backend              Soroban
 ```
 
 1. **`openSession`** — register intent parameters (sender, protocol contract, amount, structured call data).
-2. **`validate`** — run off-chain policy; on approval, publish `add_tx` on the configured Validation Engine.
+2. **`validate`** — run off-chain policy; on approval, publish `add_tx` on the configured Validation Engine (when enabled). Client gets `certId` + `attestation`.
 3. **On-chain call** — must match the same sender, protocol contract, value, and canonical `data` bytes used to compute the intent id.
 
 ---
@@ -156,20 +156,33 @@ Must match the `value` passed to `require_trustline*` on-chain.
 
 Object describing the protected Soroban invocation. The backend derives canonical **`Bytes`** (same as `trustline_sdk::encode_call_data` + argument XDR) and computes `intent_id` for `add_tx`.
 
-```ts
+```json
 {
-  "functionPrototype": "<name>(<soroban-types>)",
-  "args": [
-    { "type": "<soroban-type>", "value": <json-value> }
-  ]
+  "functionPrototype": "pay_native(address,address,i128)",
+  "args": ["C…", "G…", "10000000"]
 }
 ```
+
+| Field | Notes |
+|-------|--------|
+| `functionPrototype` | Required (alias on input: `functionSelector`) |
+| `args` | Optional; default `[]`. **Positional values** — types come from the prototype |
 
 **Rules:**
 
 - `functionPrototype` uses Soroban-style type names (`address`, `i128`, `symbol`, `vec`, …).
-- `args` order and values must match the on-chain call **exactly**.
+- `args` are plain JSON values in order; do **not** wrap them as `{ "type", "value" }`.
+- Nested types use parameterized labels (`vec<address>`, `map<symbol,i128>`, `option<u32>`). Values: arrays for `vec`/`tuple`, `[key,value]` pairs (or a JSON object) for `map`, `null` for `option` none. Bare `vec` only allows `[]`.
 - Prefer simulating the contract’s `*_intent_data` helper when available (see [On-chain alignment](#on-chain-alignment-validation-engine)).
+
+Firewall bump example:
+
+```json
+{
+  "functionPrototype": "forward(symbol,vec)",
+  "args": ["bump", []]
+}
+```
 
 ### `validationMode`
 
@@ -222,7 +235,7 @@ Or JSON-RPC `error` object with `message`.
 
 ## Method: `validate`
 
-Runs policy and, if approved, publishes the oracle proof on-chain.
+Runs policy and, if approved, publishes the oracle proof on-chain (`add_tx`). Bearer auth is optional (required when policy needs executor OTP).
 
 ### Request `params`
 
@@ -235,12 +248,10 @@ Runs policy and, if approved, publishes the oracle proof on-chain.
 ```json
 {
   "status": "approved",
-  "certId": "…",
-  "policyHash": "…",
-  "timestamp": 1700000000,
-  "publication": {
-    "status": "success",
-    "txHash": "…"
+  "certId": "<intentIdHex>",
+  "attestation": {
+    "timestamp": "2024-03-10T12:00:00Z",
+    "policyHash": "…"
   }
 }
 ```
@@ -249,22 +260,23 @@ Runs policy and, if approved, publishes the oracle proof on-chain.
 |-------|---------|
 | `status` | `"approved"` \| `"approval_required"` \| `"rejected"` |
 | `certId` | Intent / certificate identifier (aligns with on-chain intent id) |
-| `policyHash` | Policy digest stored in the proof |
-| `timestamp` | Applicative timestamp used for validity |
-| `publication.status` | `"success"` when `add_tx` landed on Soroban |
-| `publication.txHash` | Stellar transaction hash of the publish |
-
-Demo app treats anything other than `approved` + `publication.status === "success"` as failure.
+| `attestation.timestamp` | ISO-8601 (unix seconds internally on the engine) |
+| `attestation.policyHash` | Policy digest stored in the proof |
 
 ### Rejected example
 
 ```json
 {
   "status": "rejected",
-  "type": "POLICY_VIOLATION",
-  "reason": "…"
+  "type": "POLICY",
+  "reason": "…",
+  "metadata": { }
 }
 ```
+
+Typical `type` values: `POLICY`, `SESSION_ERROR` / `SESSION_STATUS_INVALID`, `CHAIN_ID_INVALID`, `INVALID_INTENT`, `CLIENT_NOT_REGISTERED`, …
+
+Session rules: open, age ≤ **5 minutes**, status **`AWAIT_VALIDATION`**. On completion the session is closed.
 
 ---
 
@@ -303,10 +315,7 @@ curl -sS "$API" \
       "validationMode": "dapp",
       "data": {
         "functionPrototype": "forward(symbol,vec)",
-        "args": [
-          { "type": "symbol", "value": "bump" },
-          { "type": "vec", "value": [] }
-        ]
+        "args": ["bump", []]
       }
     }
   }'
@@ -350,11 +359,7 @@ curl -sS "$API" \
       "validationMode": "dapp",
       "data": {
         "functionPrototype": "pay_native(address,address,i128)",
-        "args": [
-          { "type": "address", "value": "'"$NATIVE_SAC"'" },
-          { "type": "address", "value": "'"$DESTINATION"'" },
-          { "type": "i128", "value": "10000000" }
-        ]
+        "args": ["'"$NATIVE_SAC"'", "'"$DESTINATION"'", "10000000"]
       }
     }
   }'
@@ -368,18 +373,19 @@ Then sign: `pay_native(sender, native_token, destination, amount)` on the paymen
 
 ---
 
-## Type reference (`args[].type`)
+## Positional `args` values
 
-Common Soroban types used in this demo:
+Types come from `functionPrototype`. Common scalars in this demo:
 
-| `type` | JSON `value` |
-|--------|----------------|
+| Prototype type | JSON value |
+|----------------|------------|
 | `address` | Contract id (`C…`) or account (`G…`) string |
 | `i128` | Decimal integer string |
 | `symbol` | Short symbol string (e.g. `"bump"`) |
-| `vec` | JSON array (empty `[]` for no forward args) |
+| `vec` | Empty array `[]` only (use `vec<T>` for non-empty) |
+| `vec<address>` etc. | JSON array of element values |
 
-Other Soroban scalars may appear in custom integrations; they must match what the backend and on-chain `encode_call_data` expect.
+Other Soroban scalars / composites (`option`, `map`, `tuple`, …) follow the same positional rules as the TrustLine Backend API Reference.
 
 ---
 
