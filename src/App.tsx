@@ -6,7 +6,7 @@ import {
   paymentForwarderClient,
   type AppConfig,
 } from "./lib/contracts";
-import { prevalidateViaBackend } from "./lib/backendApi";
+import { prevalidateIntent } from "./lib/trustline";
 import { connectFreighter, type WalletState } from "./lib/wallet";
 import { describeError } from "./lib/errors";
 import "./App.css";
@@ -250,10 +250,10 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
 
     setBusy(true);
     try {
-      pushLog("info", "[Firewall] Backend pre-validation…");
+      pushLog("info", "[Firewall] Trustline WebSDK pre-validation…");
       let validation;
       try {
-        validation = await prevalidateViaBackend(config.backendApiUrl, {
+        validation = await prevalidateIntent(config.trustlineClientId, {
           chainId: config.backendChainId,
           senderAddress: wallet.address,
           contractAddress: config.firewallId,
@@ -266,13 +266,13 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
       } catch (e) {
         pushLog(
           "err",
-          `[Firewall] Backend pre-validation failed — ${describeError(e)}`,
+          `[Firewall] Pre-validation failed — ${describeError(e)}`,
         );
         return;
       }
       pushLog(
         "ok",
-        `[Firewall] Backend pre-validation OK — certId=${validation.certId ?? "?"}`,
+        `[Firewall] Pre-validation OK — certId=${validation.certId ?? "?"}`,
       );
 
       pushLog("info", "[Firewall] forward(bump)");
@@ -389,8 +389,8 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
         </div>
         <p className="hint">
           Any Freighter account may sign <code>forward</code> (public forward mode).
-          Prevalidation runs via the Trustline backend at{" "}
-          <code>{config.backendApiUrl}</code>. Use <strong>Bump only</strong>{" "}
+          Prevalidation runs via{" "}
+          <code>@trustline.id/websdk</code>. Use <strong>Bump only</strong>{" "}
           to confirm rejection without a fresh proof.
         </p>
       </section>
@@ -415,10 +415,10 @@ function DirectTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
 
     setBusy(true);
     try {
-      pushLog("info", "[SDK] Backend pre-validation…");
+      pushLog("info", "[SDK] Trustline WebSDK pre-validation…");
       let validation;
       try {
-        validation = await prevalidateViaBackend(config.backendApiUrl, {
+        validation = await prevalidateIntent(config.trustlineClientId, {
           chainId: config.backendChainId,
           senderAddress: wallet.address,
           contractAddress: config.paymentForwarderId,
@@ -431,13 +431,13 @@ function DirectTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
       } catch (e) {
         pushLog(
           "err",
-          `[SDK] Backend pre-validation failed — ${describeError(e)}`,
+          `[SDK] Pre-validation failed — ${describeError(e)}`,
         );
         return;
       }
       pushLog(
         "ok",
-        `[SDK] Backend pre-validation OK — certId=${validation.certId ?? "?"}`,
+        `[SDK] Pre-validation OK — certId=${validation.certId ?? "?"}`,
       );
 
       pushLog("info", "[SDK] pay_native");
@@ -551,8 +551,8 @@ function DirectTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
         </div>
         <p className="hint">
           Freighter must be the payment <strong>sender</strong> (funded in the
-          native SAC). Prevalidation runs via the Trustline backend at{" "}
-          <code>{config.backendApiUrl}</code>. Use <strong>pay_native only</strong>{" "}
+          native SAC).           Prevalidation runs via{" "}
+          <code>@trustline.id/websdk</code>. Use <strong>pay_native only</strong>{" "}
           to confirm rejection without a fresh proof.
         </p>
       </section>

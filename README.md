@@ -2,9 +2,9 @@
 
 > Built on [Stellar](https://stellar.org) with support from the [Stellar Community Fund](https://communityfund.stellar.org) — **SCF #44**.
 
-This repository is a **minimal demo frontend** allowing to test the Trustline Stellar stack end-to-end. It is not a production dapp template: it wires [Freighter](https://www.freighter.app/) to Soroban testnet contracts and to the Trustline backend so you can walk through the full flow in a few clicks — backend **pre-validation** (`openSession` / `validate`) followed by an on-chain call that only succeeds when a proof was published.
+This repository is a **minimal demo frontend** allowing to test the Trustline Stellar stack end-to-end. It is not a production dapp template: it wires [Freighter](https://www.freighter.app/) to Soroban testnet contracts and to [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) so you can walk through the full flow in a few clicks — WebSDK **pre-validation** (`trustline.validate`) followed by an on-chain call that only succeeds when a proof was published.
 
-The UI highlights the **two contract integration patterns** supported by [`trustline-sdk`](https://github.com/TrustLine-id/stellar-sdk): embed Trustline checks directly in your contract (Payment Forwarder tab), or gate a third-party contract through a firewall without Trustline calls in the target (Trustline Firewall tab). Both tabs share the same Validation Engine instance and the same backend pre-validation step.
+The UI highlights the **two contract integration patterns** supported by [`trustline-sdk`](https://github.com/TrustLine-id/stellar-sdk): embed Trustline checks directly in your contract (Payment Forwarder tab), or gate a third-party contract through a firewall without Trustline calls in the target (Trustline Firewall tab). Both tabs share the same Validation Engine instance and the same WebSDK pre-validation step.
 
 One React + Freighter UI with **two tabs**:
 
@@ -30,9 +30,9 @@ npm run dev
 
 Open http://localhost:5173. Connect **Freighter** on **Testnet** with a funded account (for signing txs — not necessarily the original deployer).
 
-The app reads contract addresses from `.env` and calls the Trustline backend (`VITE_BACKEND_API_URL`) before each on-chain action.
+The app reads contract addresses and `VITE_TRUSTLINE_CLIENT_ID` from `.env`, then calls `trustline.validate` from `@trustline.id/websdk` before each on-chain action.
 
-**Backend API reference:** [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md) — JSON-RPC `openSession` / `validate` for Stellar, with cURL examples matching both demo tabs.
+**WebSDK:** [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) ≥ 1.1.0 (Stellar support). Low-level JSON-RPC details: [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md).
 
 ## How the demo is configured, and why
 
@@ -163,10 +163,10 @@ cp .env.demo .env   # try the pre-deployed demo
 
 ## Flows
 
-Each tab calls `openSession` / `validate` on the Trustline backend (`VITE_BACKEND_API_URL`, default `https://api.trustline.id/api/v0`), then executes the on-chain protocol call from Freighter. See [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md) for request/response details and cURL samples.
+Each tab calls `trustline.validate` via `@trustline.id/websdk` (with `VITE_TRUSTLINE_CLIENT_ID` + `VITE_BACKEND_CHAIN_ID`), then executes the on-chain protocol call from Freighter. See [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md) for the underlying JSON-RPC / cURL samples.
 
-**Simple Counter tab:** backend `add_tx` → `forward(initiator, "bump")` (demo: `public_forward=true`, any Freighter account)
-**Payment Forwarder:** backend `add_tx` → `pay_native(sender, sac, destination, amount)`
+**Simple Counter tab:** WebSDK pre-validation → `forward(initiator, "bump")` (demo: `public_forward=true`, any Freighter account)
+**Payment Forwarder:** WebSDK pre-validation → `pay_native(sender, sac, destination, amount)`
 
 ## License
 

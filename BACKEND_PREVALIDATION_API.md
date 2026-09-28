@@ -13,7 +13,7 @@ The HTTP API fields below must stay aligned with what the Validation Engine and 
 | Item | Demo default |
 |------|----------------|
 | Endpoint | `POST {base}/api/v0` |
-| Demo `base` | `https://api.trustline.id` (`VITE_BACKEND_API_URL`) |
+| Demo `base` | `https://api.trustline.id` (WebSDK default) |
 | Content-Type | `application/json` |
 | Protocol | JSON-RPC **2.0** |
 
@@ -28,7 +28,7 @@ Every request body:
 }
 ```
 
-This demo calls **`openSession`** then **`validate`** directly over JSON-RPC. In the near future, these calls will be abstracted by a **Trustline WebSDK** library that handles the UX (when required by policy) for richer validation flows — OTP, multi-step approval, and similar — so integrators do not wire the backend protocol by hand.
+This demo calls **`trustline.validate`** from [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) (≥ 1.1.0), which wraps `openSession` / `validate` (and OTP UX when the policy requires it). The sections below document the underlying JSON-RPC for debugging, cURL, and non-WebSDK clients.
 
 ---
 
@@ -391,7 +391,7 @@ Other Soroban scalars / composites (`option`, `map`, `tuple`, …) follow the sa
 
 ## Client reference in this repo
 
-TypeScript wrapper: [`src/lib/backendApi.ts`](src/lib/backendApi.ts)
+TypeScript wrapper: [`src/lib/trustline.ts`](src/lib/trustline.ts) (`@trustline.id/websdk`)
 
 Demo usage:
 

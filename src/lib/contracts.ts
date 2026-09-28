@@ -13,7 +13,7 @@ export type AppConfig = {
   counterId: string;
   paymentForwarderId: string;
   nativeTokenId: string;
-  backendApiUrl: string;
+  trustlineClientId: string;
   backendChainId: string;
 };
 
@@ -30,9 +30,7 @@ export function loadConfig(): AppConfig {
     paymentForwarderId:
       import.meta.env.VITE_PAYMENT_FORWARDER_CONTRACT_ID || "",
     nativeTokenId: import.meta.env.VITE_NATIVE_TOKEN_ID || "",
-    backendApiUrl:
-      import.meta.env.VITE_BACKEND_API_URL ||
-      "https://api.trustline.id/api/v0",
+    trustlineClientId: import.meta.env.VITE_TRUSTLINE_CLIENT_ID || "",
     backendChainId: import.meta.env.VITE_BACKEND_CHAIN_ID || "2",
   };
 }

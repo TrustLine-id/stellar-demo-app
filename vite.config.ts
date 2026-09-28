@@ -24,7 +24,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Optional: set VITE_BACKEND_API_URL=/api/v0 to proxy a local backend on :8080
+    // Optional: proxy a local Trustline backend on :8080 (for SDK forks that point at /api/v0)
     proxy: {
       "/api/v0": {
         target: "http://localhost:8080",
