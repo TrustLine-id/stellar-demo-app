@@ -102,36 +102,6 @@ export interface Client {
    */
   set_public_forward: ({enabled}: {enabled: boolean}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
 
-  /**
-   * Construct and simulate a forward_intent_data transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Pure helper: builds the `data` blob used in the Trustline intent for `forward`.
-   */
-  forward_intent_data: ({fn_name, args}: {fn_name: string, args: Array<any>}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
-
-  /**
-   * Construct and simulate a set_owner_intent_data transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Pure helper: intent `data` for `set_owner`.
-   */
-  set_owner_intent_data: ({new_owner}: {new_owner: string}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
-
-  /**
-   * Construct and simulate a set_target_intent_data transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Pure helper: intent `data` for `set_target`.
-   */
-  set_target_intent_data: ({new_target}: {new_target: string}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
-
-  /**
-   * Construct and simulate a set_operator_intent_data transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Pure helper: intent `data` for `set_operator`.
-   */
-  set_operator_intent_data: ({account, is_operator}: {account: string, is_operator: boolean}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
-
-  /**
-   * Construct and simulate a set_public_forward_intent_data transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Pure helper: intent `data` for `set_public_forward`.
-   */
-  set_public_forward_intent_data: ({enabled}: {enabled: boolean}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
-
 }
 export class Client extends ContractClient {
   static async deploy<T = Client>(
@@ -162,11 +132,6 @@ export class Client extends ContractClient {
         "AAAAAAAAAGhEZXBsb3kgdGhlIGZpcmV3YWxsIGluIGZyb250IG9mIGB0YXJnZXRgLgoKUGFzcyB0aGUgYWxyZWFkeSBkZXBsb3llZCBWYWxpZGF0aW9uIEVuZ2luZSBpbnN0YW5jZSBhZGRyZXNzLgAAAA1fX2NvbnN0cnVjdG9yAAAAAAAABQAAAAAAAAAGdGFyZ2V0AAAAAAATAAAAAAAAABF2YWxpZGF0aW9uX2VuZ2luZQAAAAAAABMAAAAAAAAADWluaXRpYWxfb3duZXIAAAAAAAATAAAAAAAAABBpbml0aWFsX29wZXJhdG9yAAAD6AAAABMAAAAAAAAAFmluaXRpYWxfcHVibGljX2ZvcndhcmQAAAAAAAEAAAAA",
         "AAAAAAAAADpXaGVuIHRydWUsIGFueSBhdXRoZW50aWNhdGVkIGluaXRpYXRvciBtYXkgY2FsbCBgZm9yd2FyZGAuAAAAAAAOcHVibGljX2ZvcndhcmQAAAAAAAAAAAABAAAAAQ==",
         "AAAAAAAAADdBbGxvdyBvciBkaXNhbGxvdyB1bnJlc3RyaWN0ZWQgaW5pdGlhdG9ycyBvbiBgZm9yd2FyZGAuAAAAABJzZXRfcHVibGljX2ZvcndhcmQAAAAAAAEAAAAAAAAAB2VuYWJsZWQAAAAAAQAAAAA=",
-        "AAAAAAAAAE9QdXJlIGhlbHBlcjogYnVpbGRzIHRoZSBgZGF0YWAgYmxvYiB1c2VkIGluIHRoZSBUcnVzdGxpbmUgaW50ZW50IGZvciBgZm9yd2FyZGAuAAAAABNmb3J3YXJkX2ludGVudF9kYXRhAAAAAAIAAAAAAAAAB2ZuX25hbWUAAAAAEQAAAAAAAAAEYXJncwAAA+oAAAAAAAAAAQAAAA4=",
-        "AAAAAAAAACtQdXJlIGhlbHBlcjogaW50ZW50IGBkYXRhYCBmb3IgYHNldF9vd25lcmAuAAAAABVzZXRfb3duZXJfaW50ZW50X2RhdGEAAAAAAAABAAAAAAAAAAluZXdfb3duZXIAAAAAAAATAAAAAQAAAA4=",
-        "AAAAAAAAACxQdXJlIGhlbHBlcjogaW50ZW50IGBkYXRhYCBmb3IgYHNldF90YXJnZXRgLgAAABZzZXRfdGFyZ2V0X2ludGVudF9kYXRhAAAAAAABAAAAAAAAAApuZXdfdGFyZ2V0AAAAAAATAAAAAQAAAA4=",
-        "AAAAAAAAAC5QdXJlIGhlbHBlcjogaW50ZW50IGBkYXRhYCBmb3IgYHNldF9vcGVyYXRvcmAuAAAAAAAYc2V0X29wZXJhdG9yX2ludGVudF9kYXRhAAAAAgAAAAAAAAAHYWNjb3VudAAAAAATAAAAAAAAAAtpc19vcGVyYXRvcgAAAAABAAAAAQAAAA4=",
-        "AAAAAAAAADRQdXJlIGhlbHBlcjogaW50ZW50IGBkYXRhYCBmb3IgYHNldF9wdWJsaWNfZm9yd2FyZGAuAAAAHnNldF9wdWJsaWNfZm9yd2FyZF9pbnRlbnRfZGF0YQAAAAAAAQAAAAAAAAAHZW5hYmxlZAAAAAABAAAAAQAAAA4=",
         "AAAAAwAAALFWYWxpZGF0aW9uIG1vZGUgaW5jbHVkZWQgaW4gdGhlIGludGVudCBoYXNoIGRvbWFpbi4KCk9ubHkgW2BWYWxpZGF0aW9uTW9kZTo6RGFwcGBdIGlzIHN1cHBvcnRlZCBmb3Igbm93LiBBZGRpdGlvbmFsIG1vZGVzIG1heSBiZQphZGRlZCBsYXRlciB3aXRob3V0IGNoYW5naW5nIHRoZSBoYXNoaW5nIHNjaGVtZS4AAAAAAAAAAAAADlZhbGlkYXRpb25Nb2RlAAAAAAABAAAAAAAAAAREYXBwAAAAAA==" ]),
       options
     )
@@ -180,11 +145,6 @@ export class Client extends ContractClient {
         is_operator: this.txFromJSON<boolean>,
         set_operator: this.txFromJSON<null>,
         public_forward: this.txFromJSON<boolean>,
-        set_public_forward: this.txFromJSON<null>,
-        forward_intent_data: this.txFromJSON<Buffer>,
-        set_owner_intent_data: this.txFromJSON<Buffer>,
-        set_target_intent_data: this.txFromJSON<Buffer>,
-        set_operator_intent_data: this.txFromJSON<Buffer>,
-        set_public_forward_intent_data: this.txFromJSON<Buffer>
+        set_public_forward: this.txFromJSON<null>
   }
 }

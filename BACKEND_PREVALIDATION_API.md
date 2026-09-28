@@ -63,26 +63,24 @@ When `validate` succeeds, the backend invokes **`add_tx`** on the configured Val
 
 ### Canonical `data` (Bytes)
 
-`data` must be **byte-identical** to what the protected contract passes into `require_trustline*`.
+`data` must be **byte-identical** to what the protected contract passes into `require_trustline*` (via `require_trustline*!` / `encode_intent`).
 
-**Preferred:** simulate the protocol contract’s intent helper (read-only):
-
-| Pattern | Helper | Typical args |
-|---------|--------|--------------|
-| Trustline Firewall `forward` | `forward_intent_data(fn_name, args)` | e.g. `fn_name="bump"`, `args=[]` |
-| Firewall `set_target` | `set_target_intent_data(new_target)` | target address |
-| Payment Forwarder native | `pay_native_intent_data(native_token, destination, amount)` | SAC id, dest, amount |
-| Payment Forwarder tokens | `pay_tokens_intent_data(destination, token, amount)` | dest, token, amount |
-
-**Fallback** (offline only — easy to get wrong):
+**Preferred:** rebuild from the same structured intent the client sent to `openSession`:
 
 ```text
-data = utf8_bytes(fn_name) || args_xdr
+data = utf8_bytes(action_name) || xdr(args_tuple)
 ```
 
-where `args_xdr` is Soroban `ToXdr` for the argument tuple. Mismatch → different `intent_id` → consume fails.
+| Pattern | Action name | Args (XDR tuple) |
+|---------|-------------|------------------|
+| Trustline Firewall `forward` | `forward` | `(fn_name: Symbol, args: Vec<Val>)` e.g. `("bump", [])` |
+| Firewall `set_target` | `set_target` | `new_target: Address` |
+| Payment Forwarder native | `pay_native` | `(native_token, destination, amount)` |
+| Payment Forwarder tokens | `pay_tokens` | `(destination, token, amount)` |
 
-The JSON `data` object in `openSession` is the backend’s structured input; the backend derives the same canonical bytes as `trustline_sdk::encode_call_data` + argument XDR.
+That matches `trustline_sdk::encode_intent` / `encode_call_data` on-chain. Mismatch → different `intent_id` → consume fails.
+
+The JSON `data` object in `openSession` is the backend’s structured input; the backend derives those canonical bytes from `functionPrototype` + positional `args`.
 
 ### `intent_id`
 
@@ -173,7 +171,7 @@ Object describing the protected Soroban invocation. The backend derives canonica
 - `functionPrototype` uses Soroban-style type names (`address`, `i128`, `symbol`, `vec`, …).
 - `args` are plain JSON values in order; do **not** wrap them as `{ "type", "value" }`.
 - Nested types use parameterized labels (`vec<address>`, `map<symbol,i128>`, `option<u32>`). Values: arrays for `vec`/`tuple`, `[key,value]` pairs (or a JSON object) for `map`, `null` for `option` none. Bare `vec` only allows `[]`.
-- Prefer simulating the contract’s `*_intent_data` helper when available (see [On-chain alignment](#on-chain-alignment-validation-engine)).
+- Action name + arg order must match on-chain `require_trustline*!` / `encode_intent` (see [On-chain alignment](#on-chain-alignment-validation-engine)).
 
 Firewall bump example:
 
