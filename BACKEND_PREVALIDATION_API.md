@@ -403,5 +403,6 @@ Demo usage:
 | Document | Scope |
 |----------|--------|
 | [README.md](README.md) | Running this demo UI |
+| [websdk](https://github.com/TrustLine-id/websdk) | Client SDK — `validate` / structured `data` + args types |
 | [stellar-sdk](https://github.com/TrustLine-id/stellar-sdk) | Integrator contract helpers |
 | [stellar-validation-engine](https://github.com/TrustLine-id/stellar-validation-engine) | Validation Engine WASM |
