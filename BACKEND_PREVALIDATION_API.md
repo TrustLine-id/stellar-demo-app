@@ -80,7 +80,7 @@ data = utf8_bytes(action_name) || xdr(args_tuple)
 
 That matches `trustline_sdk::encode_intent` / `encode_call_data` on-chain. Mismatch → different `intent_id` → consume fails.
 
-The JSON `data` object in `openSession` is the backend’s structured input; the backend derives those canonical bytes from `functionPrototype` + positional `args`.
+The JSON `data` object in `openSession` is the backend’s structured input; the backend derives those canonical bytes from a **fully typed** `functionPrototype` + positional `args` (no SEP-48 fetch / no value-type inference on Stellar).
 
 ### `intent_id`
 
@@ -152,7 +152,7 @@ Must match the `value` passed to `require_trustline*` on-chain.
 
 ### `data` — structured intent (critical)
 
-Object describing the protected Soroban invocation. The backend derives canonical **`Bytes`** (same as `trustline_sdk::encode_call_data` + argument XDR) and computes `intent_id` for `add_tx`.
+Object describing the protected Soroban invocation. The backend derives canonical **`Bytes`** (same as `trustline_sdk::encode_call_data` / `encode_intent`) and computes `intent_id` for `add_tx`.
 
 ```json
 {
@@ -163,22 +163,64 @@ Object describing the protected Soroban invocation. The backend derives canonica
 
 | Field | Notes |
 |-------|--------|
-| `functionPrototype` | Required (alias on input: `functionSelector`) |
-| `args` | Optional; default `[]`. **Positional values** — types come from the prototype |
+| `functionPrototype` | Required (alias on input: `functionSelector`). On **Stellar**, types must be **fully explicit** in the prototype. |
+| `args` | Optional; default `[]`. **Positional values only** — types come from `functionPrototype` |
 
-**Rules:**
+**Rules (Stellar):**
 
-- `functionPrototype` uses Soroban-style type names (`address`, `i128`, `symbol`, `vec`, …).
+- Write a complete prototype: `name(type1,type2,…)` using Soroban-style type names.
 - `args` are plain JSON values in order; do **not** wrap them as `{ "type", "value" }`.
-- Nested types use parameterized labels (`vec<address>`, `map<symbol,i128>`, `option<u32>`). Values: arrays for `vec`/`tuple`, `[key,value]` pairs (or a JSON object) for `map`, `null` for `option` none. Bare `vec` only allows `[]`.
+- **`vec` typing:**
+  - `vec<T>` — homogeneous vector of `T`
+  - `vec<T1,T2,…>` — heterogeneous `Vec<Val>` (e.g. firewall `forward` payload)
+  - `vec<>` — empty vector only (`args` entry must be `[]`)
+- Named structs: `struct{field:type,…}` (field names required for the ScMap). JSON value may be an **object** or a **positional array** in field declaration order.
+- `bytes` / `bytesN` are **hex strings** (`"0x…"`, empty `"0x"` / `""`) — never a JSON number array.
 - Action name + arg order must match on-chain `require_trustline*!` / `encode_intent` (see [On-chain alignment](#on-chain-alignment-validation-engine)).
 
-Firewall bump example:
+Firewall bump (empty forward payload):
 
 ```json
 {
-  "functionPrototype": "forward(symbol,vec)",
+  "functionPrototype": "forward(symbol,vec<>)",
   "args": ["bump", []]
+}
+```
+
+Payment Forwarder:
+
+```json
+{
+  "functionPrototype": "pay_native(address,address,i128)",
+  "args": ["C…nativeSAC…", "G…destination…", "10000000"]
+}
+```
+
+UDT / struct args — typed in the prototype; values as positional arrays **or** named objects:
+
+```json
+{
+  "functionPrototype": "submit(address,address,vec<struct{address:address,amount:i128,request_type:u32}>)",
+  "args": [
+    "G…FROM",
+    "G…SPENDER",
+    [
+      ["C…ASSET", "10000000", 2],
+      { "address": "C…OTHER", "amount": "5000000", "request_type": 0 }
+    ]
+  ]
+}
+```
+
+Firewall `forward` wrapping a typed payload (heterogeneous `vec<…>` = `Vec<Val>` bag):
+
+```json
+{
+  "functionPrototype": "forward(symbol,vec<address,address,vec<struct{address:address,amount:i128,request_type:u32}>>)",
+  "args": [
+    "submit",
+    ["G…FROM", "G…SPENDER", [["C…ASSET", "10000000", 2]]]
+  ]
 }
 ```
 
@@ -312,7 +354,7 @@ curl -sS "$API" \
       "nativeAmount": "0",
       "validationMode": "dapp",
       "data": {
-        "functionPrototype": "forward(symbol,vec)",
+        "functionPrototype": "forward(symbol,vec<>)",
         "args": ["bump", []]
       }
     }
@@ -373,17 +415,21 @@ Then sign: `pay_native(sender, native_token, destination, amount)` on the paymen
 
 ## Positional `args` values
 
-Types come from `functionPrototype`. Common scalars in this demo:
+On Stellar, types come from **`functionPrototype`** (fully explicit); `args` are positional values (no `{ type, value }` wrappers). No SEP-48 lookup.
 
-| Prototype type | JSON value |
-|----------------|------------|
-| `address` | Contract id (`C…`) or account (`G…`) string |
-| `i128` | Decimal integer string |
-| `symbol` | Short symbol string (e.g. `"bump"`) |
-| `vec` | Empty array `[]` only (use `vec<T>` for non-empty) |
-| `vec<address>` etc. | JSON array of element values |
-
-Other Soroban scalars / composites (`option`, `map`, `tuple`, …) follow the same positional rules as the TrustLine Backend API Reference.
+| Stellar prototype type | JSON value |
+|------------------------|------------|
+| `address` / `symbol` / `string` | string (addresses `G…`/`C…`) |
+| `bytes` / `bytesN` / `bytesN<N>` | hex string: `"0xab…"`, empty → `"0x"` or `""` (**not** a JSON array of numbers) |
+| integers (`i128`, `u64`, …) | decimal string (preferred) or number |
+| `bool` | boolean |
+| `vec<T>` | JSON array of `T` |
+| `vec<T1,T2,…>` | JSON array of length N (heterogeneous `Vec<Val>`) |
+| `vec<>` | `[]` only |
+| `tuple` / `(T1,T2)` | JSON array |
+| `map<K,V>` | `[[k,v], …]` or a JSON object (string/symbol keys) |
+| `option<T>` | `null` (none) or a value of type `T` |
+| `struct{field:type,…}` | `{ field: value, … }` **or** `[v0, v1, …]` in field declaration order → ScMap |
 
 ---
 
@@ -393,8 +439,8 @@ TypeScript wrapper: [`src/lib/trustline.ts`](src/lib/trustline.ts) (`@trustline.
 
 Demo usage:
 
-- Counter tab — [`src/App.tsx`](src/App.tsx) (`forward(initiator, symbol, vec)` with `public_forward`)
-- Payment tab — [`src/App.tsx`](src/App.tsx) (`pay_native(address,address,i128)`)
+- Counter tab — [`src/App.tsx`](src/App.tsx) (`forward(symbol,vec<>)` + `["bump", []]`)
+- Payment tab — [`src/App.tsx`](src/App.tsx) (`pay_native(address,address,i128)` + positional args)
 
 ---
 
@@ -403,6 +449,6 @@ Demo usage:
 | Document | Scope |
 |----------|--------|
 | [README.md](README.md) | Running this demo UI |
-| [websdk](https://github.com/TrustLine-id/websdk) | Client SDK — `validate` / structured `data` + args types |
+| [websdk](https://github.com/TrustLine-id/websdk) | Client SDK — `validate` / structured `data` (Stellar: explicit typed `functionPrototype` + positional args) |
 | [stellar-sdk](https://github.com/TrustLine-id/stellar-sdk) | Integrator contract helpers |
 | [stellar-validation-engine](https://github.com/TrustLine-id/stellar-validation-engine) | Validation Engine WASM |
