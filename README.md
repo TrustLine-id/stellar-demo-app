@@ -72,9 +72,9 @@ replay protection and known limitations are documented in
 
 Use this when you want **your own** testnet contracts (fresh registry, VE, firewall, counter, payment forwarder).
 
-That requires `scripts/deploy-testnet.sh`, which builds WASM from the sibling Rust repos. **Only this path needs the monorepo layout below** — the UI alone works with `.env.demo`.
+That requires the deploy scripts below, which build WASM from the sibling Rust repos. **Only this path needs the monorepo layout** — the UI alone works with `.env.demo`.
 
-> **Before you start.** The deploy script gives you your own contracts, but the hosted
+> **Before you start.** The deploy scripts give you your own contracts, but the hosted
 > Trustline backend at `api.trustline.id` only pre-validates contracts that have been
 > registered with us for a chain id. It will refuse a freshly deployed address with
 > `Contract address C... is not registered on chain 2`, so both tabs will fail with
@@ -98,15 +98,10 @@ Expected layout:
 
 ```text
 trustline-stellar/
-├── stellar-demo-app/              ← this UI + scripts/deploy-testnet.sh
+├── stellar-demo-app/              ← this UI + client / full-stack deploy scripts
 ├── stellar-sdk/                   ← payment-forwarder, trustline-firewall, protected-counter
-└── stellar-validation-engine/     ← registry, TrustlineOracleVE
+└── stellar-validation-engine/     ← registry + TrustlineOracleVE (+ scripts/deploy-testnet.sh)
 ```
-
-The deploy script resolves:
-
-- `../stellar-sdk` — example client contracts
-- `../stellar-validation-engine` — registry + VE WASM
 
 ### 2. Prerequisites
 
@@ -125,12 +120,20 @@ If `trustline-sdk` is not yet on crates.io, enable the local patch in the valida
 cp stellar-validation-engine/.cargo/config.toml.example stellar-validation-engine/.cargo/config.toml
 ```
 
-### 3. Deploy and run
+### 3. Deploy scripts
+
+| Script | Repo | Deploys |
+|--------|------|---------|
+| [`deploy-testnet.sh`](../stellar-validation-engine/scripts/deploy-testnet.sh) | validation-engine | TrustlineRegistry + `set_oracle` + patch `VALIDATION_REGISTRY` |
+| [`deploy-client-testnet.sh`](scripts/deploy-client-testnet.sh) | this repo | Client VE + firewall / counter / payment + `.env` |
+| [`deploy-testnet.sh`](scripts/deploy-testnet.sh) | this repo | Full stack = VE `deploy-testnet` then `deploy-client-testnet` |
+
+**Full stack** (recommended for a fresh demo):
 
 ```bash
 cd stellar-demo-app
 
-export STELLAR_ACCOUNT=alice   # deployer + firewall owner
+export STELLAR_ACCOUNT=alice   # deployer + registry / VE admin + firewall owner
 # Optional backend oracle for add_tx (default in deploy-testnet.sh):
 # export BACKEND_ORACLE=GADELLMHQRWZIYL5YJ264LDTAV3C3I2AQI6TV46WTLUYM3BFG36PDS2Q
 
@@ -139,7 +142,17 @@ export STELLAR_ACCOUNT=alice   # deployer + firewall owner
 npm install && npm run dev
 ```
 
-The script writes a new `.env` with your deployed contract IDs. Import the same secret as `STELLAR_ACCOUNT` into Freighter (Testnet).
+**Split** (reuse an existing registry, or redeploy only the client side):
+
+```bash
+# Once (Trustline core):
+cd stellar-validation-engine && export STELLAR_ACCOUNT=alice && ./scripts/deploy-testnet.sh
+
+# Client VE + apps (reads patched VALIDATION_REGISTRY):
+cd ../stellar-demo-app && export STELLAR_ACCOUNT=alice && ./scripts/deploy-client-testnet.sh
+```
+
+`deploy-client-testnet.sh` writes a new `.env` with your deployed contract IDs. Import the same secret as `STELLAR_ACCOUNT` into Freighter (Testnet).
 
 ## Environment files
 
@@ -147,7 +160,7 @@ The script writes a new `.env` with your deployed contract IDs. Import the same 
 |------|---------|
 | `.env.demo` | **Ready-to-run** testnet IDs (shared demo stack). Copy to `.env`. |
 | `.env.example` | Empty template — documents all variables. |
-| `.env` | Local config (gitignored). Created by `cp .env.demo .env` or by `deploy-testnet.sh`. |
+| `.env` | Local config (gitignored). Created by `cp .env.demo .env` or by `deploy-client-testnet.sh` / `deploy-testnet.sh`. |
 
 ```bash
 cp .env.demo .env   # try the pre-deployed demo
@@ -158,8 +171,8 @@ cp .env.demo .env   # try the pre-deployed demo
 | Repo | Role |
 |------|------|
 | [stellar-demo-app](https://github.com/TrustLine-id/stellar-demo-app) | This repo — React UI |
-| [stellar-sdk](https://github.com/TrustLine-id/stellar-sdk) | Example contracts (deploy script only) |
-| [stellar-validation-engine](https://github.com/TrustLine-id/stellar-validation-engine) | Registry + VE (deploy script only) |
+| [stellar-sdk](https://github.com/TrustLine-id/stellar-sdk) | Example contracts (client deploy) |
+| [stellar-validation-engine](https://github.com/TrustLine-id/stellar-validation-engine) | Registry + VE (`deploy-testnet.sh`) |
 
 ## Flows
 
