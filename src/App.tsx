@@ -259,7 +259,7 @@ function OwnershipTab({ config, wallet, busy, setBusy, pushLog }: TabProps) {
           contractAddress: config.firewallId,
           nativeAmount: "0",
           data: {
-            functionPrototype: "forward(symbol,vec)",
+            functionPrototype: "forward(symbol,vec<>)",
             args: ["bump", []],
           },
         });
