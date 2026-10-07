@@ -32,12 +32,12 @@ Open http://localhost:5173. Connect **Freighter** on **Testnet** with a funded a
 
 The app reads contract addresses and `VITE_TRUSTLINE_CLIENT_ID` from `.env`, then calls `trustline.validate` from `@trustline.id/websdk` before each on-chain action.
 
-**WebSDK:** [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) ≥ 1.1.0 (Stellar support). Low-level JSON-RPC details: [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md).
+**WebSDK:** [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) ≥ 1.2.0 (Stellar support). Low-level JSON-RPC details: [BACKEND_PREVALIDATION_API.md](BACKEND_PREVALIDATION_API.md).
 
 ## How the demo is configured, and why
 
 This stack is deliberately **open to any visitor**. That is a design choice made so
-anywone can test this demo without contacting us, and it is worth understanding before
+anyone can test this demo without contacting us, and it is worth understanding before
 you read anything into it.
 
 **The policy is a pass-through.** The Trustline backend approves every well-formed request.

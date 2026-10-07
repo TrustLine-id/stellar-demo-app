@@ -13,7 +13,7 @@
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^14.1.1",
-    "@trustline.id/websdk": "^1.1.0",
+    "@trustline.id/websdk": "^1.2.0",
     "buffer": "^6.0.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

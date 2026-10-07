@@ -28,7 +28,7 @@ Every request body:
 }
 ```
 
-This demo calls **`trustline.validate`** from [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) (≥ 1.1.0), which wraps `openSession` / `validate` (and OTP UX when the policy requires it). The sections below document the underlying JSON-RPC for debugging, cURL, and non-WebSDK clients.
+This demo calls **`trustline.validate`** from [`@trustline.id/websdk`](https://www.npmjs.com/package/@trustline.id/websdk) (≥ 1.2.0), which wraps `openSession` / `validate` (and OTP UX when the policy requires it). The sections below document the underlying JSON-RPC for debugging, cURL, and non-WebSDK clients.
 
 ---
 
