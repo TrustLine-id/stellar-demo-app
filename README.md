@@ -76,13 +76,12 @@ That builds WASM from **stellar-sdk** (sibling). The VE WASM itself comes from T
 [`deployments.json`](https://github.com/TrustLine-id/stellar-validation-engine/blob/master/deployments.json)
 (`ve_uploads[].wasm_hash` + `registry_contract_id` for your network) — **no VE checkout**. **Only this path needs the monorepo layout** — the UI alone works with `.env.demo`.
 
-> **Before you start.** The deploy scripts give you your own contracts, but the hosted
-> Trustline backend at `api.trustline.id` only pre-validates contracts that have been
-> registered with us for a chain id. It will refuse a freshly deployed address with
-> `Contract address C... is not registered on chain 2`, so both tabs will fail with
-> `NotApproved` until we register them. Use this path to verify the contracts build and
-> deploy from source. To exercise the full flow end to end, either use `.env.demo` or
-> contact us to have your contracts registered.
+> **After deploy.** Register your new contract ids (firewall + payment forwarder) on
+> [onboarding.trustline.id](https://onboarding.trustline.id) for chain id `2` (testnet),
+> put the resulting client id in `VITE_TRUSTLINE_CLIENT_ID`, then map the tab entrypoints.
+> Until then `validate` refuses the address (`Contract address C... is not registered on
+> chain 2`) and both tabs fail with `NotApproved`. The shared stack in `.env.demo` is
+> already registered — use it if you only want the UI.
 
 ### 1. Clone repositories
 
@@ -135,7 +134,7 @@ export STELLAR_ACCOUNT=alice
 ./scripts/deploy-testnet.sh
 ```
 
-`deploy-client-testnet.sh` writes a new `.env` with your deployed contract IDs. Import the same secret as `STELLAR_ACCOUNT` into Freighter (Testnet).
+`deploy-client-testnet.sh` writes a new `.env` with your deployed contract IDs. Import the same secret as `STELLAR_ACCOUNT` into Freighter (Testnet), then register the contracts as above.
 
 ## Environment files
 
